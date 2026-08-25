@@ -1,0 +1,59 @@
+/* Ajustes de lectura y navegación para pantallas pequeñas. */
+body {
+  overflow-x: hidden;
+}
+
+.brand {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.brand img {
+  width: auto;
+  height: 64px;
+  max-width: 96px;
+  object-fit: contain;
+}
+
+@media (max-width: 850px) {
+  .brand img {
+    height: 54px;
+    max-width: 82px;
+  }
+
+  .hero h1,
+  .section h2,
+  .appointment h2 {
+    overflow-wrap: normal;
+    hyphens: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .header {
+    padding-inline: 1rem;
+  }
+
+  .brand img {
+    height: 50px;
+    max-width: 76px;
+  }
+
+  .hero {
+    gap: 1.5rem;
+  }
+
+  .hero-art {
+    height: 320px;
+  }
+
+  .hero-art p {
+    bottom: 0;
+    right: 50%;
+    width: 100%;
+    padding-inline: 0.5rem;
+    text-align: center;
+    transform: translateX(50%);
+  }
+}
