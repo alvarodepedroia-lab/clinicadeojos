@@ -29,6 +29,19 @@ export type PanelDoctor = {
   blocks: (AvailabilityBlock & { id: string })[];
 };
 
+export type StaffMember = {
+  id: string; username: string | null; full_name: string | null; role: string;
+  active: boolean; must_change_password: boolean; can_manage_staff: boolean;
+};
+
+export type PasswordResetRequest = {
+  id: string; username: string; status: "pending" | "done"; notified: boolean; created_at: string;
+};
+
+const roleLabels: Record<string, string> = {
+  administrator: "Administración", reception: "Recepción", operator: "Consulta",
+};
+
 const careLabels: Record<string, string> = {
   first_consultation: "Primera consulta", follow_up: "Control", study: "Estudio", other_service: "Otro servicio",
 };
@@ -45,15 +58,18 @@ const firstOfMonth = () => { const now = new Date(); return toIsoDate(new Date(n
 const lastOfMonth = () => { const now = new Date(); return toIsoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)); };
 
 export default function EmployeeDashboardClient({
-  profile, initialRequests, initialDoctors,
+  profile, initialRequests, initialDoctors, initialStaff = [], initialResets = [],
 }: {
-  profile: { fullName: string; role: string };
+  profile: { fullName: string; username?: string; role: string; canManageStaff?: boolean };
   initialRequests: AppointmentRequest[];
   initialDoctors: PanelDoctor[];
+  initialStaff?: StaffMember[];
+  initialResets?: PasswordResetRequest[];
 }) {
-  const [section, setSection] = useState<"resumen" | "reservas" | "medicos">("resumen");
+  const [section, setSection] = useState<"resumen" | "reservas" | "medicos" | "accesos">("resumen");
   const [requests, setRequests] = useState(initialRequests);
   const [doctors, setDoctors] = useState(initialDoctors);
+  const [resets, setResets] = useState(initialResets);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -148,10 +164,28 @@ export default function EmployeeDashboardClient({
     } finally { setSavingId(null); }
   }
 
+  async function resolveReset(id: string) {
+    const before = resets; setSavingId(id); setMessage("");
+    setResets((current) => current.map((item) => (item.id === id ? { ...item, status: "done" } : item)));
+    try {
+      const { error } = await createBrowserSupabaseClient()
+        .from("password_reset_requests")
+        .update({ status: "done", resolved_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+      setMessage("Pedido marcado como resuelto.");
+    } catch {
+      setResets(before);
+      setMessage("No se pudo marcar el pedido.");
+    } finally { setSavingId(null); }
+  }
+
   async function signOut() {
     await createBrowserSupabaseClient().auth.signOut();
     window.location.assign("/empleados/acceso");
   }
+
+  const pendingResets = resets.filter((item) => item.status === "pending").length;
 
   return (
     <main className="employee-dashboard">
@@ -175,6 +209,11 @@ export default function EmployeeDashboardClient({
         <button className={section === "medicos" ? "active" : ""} onClick={() => setSection("medicos")}>
           Médicos <span>{doctors.filter((doctor) => doctor.active).length}/{doctors.length}</span>
         </button>
+        {isAdministrator && (
+          <button className={section === "accesos" ? "active" : ""} onClick={() => setSection("accesos")}>
+            Accesos{pendingResets > 0 && <span className="badge-alert">{pendingResets}</span>}
+          </button>
+        )}
       </nav>
 
       {message && <p className="dashboard-message" role="status">{message}</p>}
@@ -279,6 +318,76 @@ export default function EmployeeDashboardClient({
               />
             ))}
           </div>
+        </section>
+      )}
+
+      {section === "accesos" && isAdministrator && (
+        <section className="dashboard-card">
+          <div className="dashboard-card-heading">
+            <div>
+              <p className="eyebrow">Cuentas del personal</p>
+              <h2>Accesos</h2>
+              <p className="section-description">
+                Las contraseñas se guardan cifradas: no se pueden ver ni reenviar. Para devolverle el
+                acceso a alguien hay que restablecerle la contraseña temporal desde Supabase; el
+                sistema le va a exigir elegir una nueva apenas entre.
+              </p>
+            </div>
+          </div>
+
+          <h3 className="access-subtitle">Pedidos de recuperación</h3>
+          {!resets.length ? (
+            <p className="summary-empty">No hay pedidos.</p>
+          ) : (
+            <ul className="reset-list">
+              {resets.map((item) => (
+                <li key={item.id} className={item.status === "pending" ? "reset-pending" : ""}>
+                  <div>
+                    <b>{item.username}</b>
+                    <small>
+                      {dateFormat.format(new Date(item.created_at))}
+                      {item.notified ? " · avisado por correo" : " · sin aviso por correo"}
+                    </small>
+                  </div>
+                  {item.status === "pending" ? (
+                    <button type="button" disabled={savingId === item.id} onClick={() => resolveReset(item.id)}>
+                      Marcar resuelto
+                    </button>
+                  ) : (
+                    <span className="reset-done">Resuelto</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <h3 className="access-subtitle">Equipo con acceso</h3>
+          {!initialStaff.length ? (
+            <p className="summary-empty">No se pudo leer el listado del equipo.</p>
+          ) : (
+            <div className="request-table" role="region" aria-label="Cuentas del personal" tabIndex={0}>
+              <table>
+                <thead><tr><th>Usuario</th><th>Nombre</th><th>Permisos</th><th>Estado</th><th>Contraseña</th></tr></thead>
+                <tbody>
+                  {initialStaff.map((member) => (
+                    <tr key={member.id}>
+                      <td><strong>{member.username ?? "—"}</strong></td>
+                      <td><strong>{member.full_name ?? "—"}</strong></td>
+                      <td>
+                        <strong>{roleLabels[member.role] ?? member.role}</strong>
+                        {member.can_manage_staff && <small>Acceso total</small>}
+                      </td>
+                      <td><strong>{member.active ? "Activo" : "Inactivo"}</strong></td>
+                      <td>
+                        <strong>{member.must_change_password ? "Temporal" : "Propia"}</strong>
+                        {member.must_change_password && <small>todavía no la cambió</small>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       )}
     </main>

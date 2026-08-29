@@ -12,7 +12,8 @@
     "start": "next start",
     "test": "npm run build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "usuarios": "node scripts/crear-usuarios.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.4",
