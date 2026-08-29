@@ -1,6 +1,7 @@
 revoke insert, update, delete on table public.doctors from anon;
 grant select, update on table public.doctors to authenticated;
 
+drop policy if exists "active staff view all doctors" on public.doctors;
 create policy "active staff view all doctors"
 on public.doctors
 for select
@@ -12,6 +13,7 @@ using (
   )
 );
 
+drop policy if exists "administrators update doctors" on public.doctors;
 create policy "administrators update doctors"
 on public.doctors
 for update

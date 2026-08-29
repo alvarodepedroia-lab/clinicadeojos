@@ -21,9 +21,15 @@ create table if not exists public.team_members (
 alter table public.team_members enable row level security;
 grant select on table public.team_members to anon, authenticated;
 grant update on table public.team_members to authenticated;
+drop policy if exists "public view active team members" on public.team_members;
 create policy "public view active team members" on public.team_members for select to anon, authenticated using (active);
+drop policy if exists "active staff view all team members" on public.team_members;
 create policy "active staff view all team members" on public.team_members for select to authenticated using (exists (select 1 from public.staff_profiles p where p.id = (select auth.uid()) and p.active));
+drop policy if exists "administrators update team members" on public.team_members;
 create policy "administrators update team members" on public.team_members for update to authenticated using (exists (select 1 from public.staff_profiles p where p.id = (select auth.uid()) and p.active and p.role = 'administrator')) with check (exists (select 1 from public.staff_profiles p where p.id = (select auth.uid()) and p.active and p.role = 'administrator'));
 
+create unique index if not exists team_members_full_name_unique_idx on public.team_members(full_name);
+
 insert into public.team_members (full_name, role, display_order) values
-  ('Rosana', 'Contadora', 1), ('Milagros', 'Administración', 2), ('Antonio', 'Administración', 3), ('Romina', 'Administración', 4), ('Mónica', 'Administración', 5);
+  ('Rosana', 'Contadora', 1), ('Milagros', 'Administración', 2), ('Antonio', 'Administración', 3), ('Romina', 'Administración', 4), ('Mónica', 'Administración', 5)
+on conflict (full_name) do nothing;
