@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -10,7 +11,6 @@ export type Doctor = { id: string; full_name: string; registration_number: strin
 
 const careLabels: Record<string, string> = { first_consultation: "Primera consulta", follow_up: "Control", study: "Estudio", other_service: "Otro servicio" };
 const dateFormat = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-const statusLabel = (status: string) => statuses.find(([value]) => value === status)?.[1] ?? status;
 const formatDate = (date: string | null) => date ? dateFormat.format(new Date(`${date}T12:00:00`)) : "A coordinar";
 
 export default function EmployeeDashboardClient({ profile, initialRequests, initialDoctors }: { profile: { fullName: string; role: string }; initialRequests: AppointmentRequest[]; initialDoctors: Doctor[] }) {
