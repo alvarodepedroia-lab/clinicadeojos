@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { appointmentRequestSchema } from "@/lib/appointments";
 import { createPublicApiClient } from "@/lib/supabase/server";
+import { isValidPreference, type AvailabilityBlock } from "@/lib/availability";
 
 export async function POST(request: Request) {
   const client = createPublicApiClient();
@@ -17,10 +18,30 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ message: "Revisá los datos ingresados.", issues: parsed.error.flatten() }, { status: 400 });
   const value = parsed.data;
   let doctorId: string | null = null;
+  let slotMinutes = 30;
+  let blocks: AvailabilityBlock[] = [];
   if (!value.firstAvailable && value.doctorName) {
-    const { data: doctor, error: doctorError } = await client.from("doctors").select("id").eq("full_name", value.doctorName).eq("active", true).maybeSingle();
+    const { data: doctor, error: doctorError } = await client.from("doctors").select("id, slot_minutes, doctor_availability(weekday, start_time, end_time, active)").eq("full_name", value.doctorName).eq("active", true).maybeSingle();
     if (doctorError || !doctor) return NextResponse.json({ message: "El profesional seleccionado no está disponible. Elegí otra opción." }, { status: 409 });
     doctorId = doctor.id;
+    slotMinutes = doctor.slot_minutes ?? 30;
+    blocks = ((doctor.doctor_availability ?? []) as (AvailabilityBlock & { active: boolean })[]).filter((block) => block.active);
+  } else {
+    // Sin profesional elegido, vale cualquier día en que atienda alguien del equipo.
+    const { data: agenda } = await client.from("doctor_availability").select("weekday, start_time, end_time").eq("active", true);
+    blocks = (agenda ?? []) as AvailabilityBlock[];
+  }
+
+  // Un profesional sin bloques cargados tiene horarios rotativos: no se le exige fecha.
+  if (blocks.length) {
+    const preferences: [string | undefined, string | undefined][] = [
+      [value.preferredDate, value.preferredTimeBand],
+      [value.alternativeDate, value.alternativeTimeBand],
+      [value.thirdDate, value.thirdTimeBand],
+    ];
+    if (!preferences.every(([date, time]) => isValidPreference(blocks, slotMinutes, date, time))) {
+      return NextResponse.json({ message: "Alguno de los horarios elegidos ya no está disponible. Volvé a cargar la página y elegí otro." }, { status: 409 });
+    }
   }
   const requestCode = `CO-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
   const { error } = await client.from("appointment_requests").insert({
