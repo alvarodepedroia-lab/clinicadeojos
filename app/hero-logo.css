@@ -1,4 +1,30 @@
 .hero { background: #fff; }
 .hero-logo:before { content: ""; position: absolute; width: 112%; aspect-ratio: 1; border: 1px solid #c8e6f3; border-radius: 50%; transform: rotate(25deg); }
-.hero-logo img { width: min(420px, 82%); height: auto; position: relative; z-index: 1; }
+
+/* Medidas tomadas del PNG original (1254x1254):
+   el iris es un disco navy de radio 150px centrado en (737, 509),
+   y la estrella entra entera dentro de él, con un radio máximo de 115px. */
+.logo-eye { position: relative; display: block; width: min(420px, 82%); z-index: 1; --px: 0; --py: 0; }
+.logo-eye img { width: 100%; height: auto; display: block; }
+
+/* Tapa la estrella original. Queda apenas dentro del disco para no dejar borde. */
+.logo-iris {
+  position: absolute; left: 58.77%; top: 40.59%;
+  width: 23.6%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: #122a7b; overflow: hidden;
+}
+
+/* Recorte de la propia imagen, centrado en la estrella. Al moverse arrastra la
+   estrella y deja atrás el navy del disco. */
+.logo-pupil {
+  position: absolute; left: 50%; top: 50%;
+  width: 82.4%; aspect-ratio: 1;
+  background-image: url("/logo-clinica-de-ojos.png");
+  background-repeat: no-repeat;
+  background-size: 513.9%;
+  background-position: 60.89% 38.32%;
+  transform: translate(-50%, -50%) translate(calc(var(--px) * 9.5%), calc(var(--py) * 9.5%));
+  transition: transform .38s cubic-bezier(.22, .61, .36, 1);
+}
+
 .map iframe { width: 100%; height: 100%; border: 0; display: block; }

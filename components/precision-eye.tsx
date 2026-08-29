@@ -13,26 +13,18 @@ export function PrecisionEye() {
     if (!window.matchMedia("(pointer: fine)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    let frame = 0;
     function follow(event: PointerEvent) {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        if (!element) return;
-        const box = element.getBoundingClientRect();
-        const deltaX = event.clientX - (box.left + box.width / 2);
-        const deltaY = event.clientY - (box.top + box.height / 2);
-        const distance = Math.hypot(deltaX, deltaY) || 1;
-        const reach = Math.min(distance, 560) / 560;
-        element.style.setProperty("--eye-x", `${(deltaX / distance) * reach * 17}px`);
-        element.style.setProperty("--eye-y", `${(deltaY / distance) * reach * 17}px`);
-      });
+      const box = element!.getBoundingClientRect();
+      const deltaX = event.clientX - (box.left + box.width / 2);
+      const deltaY = event.clientY - (box.top + box.height / 2);
+      const distance = Math.hypot(deltaX, deltaY) || 1;
+      const reach = Math.min(distance, 560) / 560;
+      element!.style.setProperty("--eye-x", `${(deltaX / distance) * reach * 17}px`);
+      element!.style.setProperty("--eye-y", `${(deltaY / distance) * reach * 17}px`);
     }
 
     window.addEventListener("pointermove", follow, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", follow);
-      cancelAnimationFrame(frame);
-    };
+    return () => window.removeEventListener("pointermove", follow);
   }, []);
 
   return (
