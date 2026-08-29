@@ -23,12 +23,15 @@ export default async function EmployeeDashboard() {
   const userId = claimsData?.claims?.sub;
   if (!userId) redirect("/empleados/acceso");
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("staff_profiles")
     .select("full_name, role, active")
     .eq("id", userId)
     .maybeSingle();
 
+  // Si la consulta falla (por ejemplo, una política mal escrita) el usuario
+  // termina de vuelta en el login sin explicación. Que quede en los registros.
+  if (profileError) console.error("[empleados] no se pudo leer el perfil:", profileError.message);
   if (!profile?.active) redirect("/empleados/acceso");
 
   // Columnas de la migración de cuentas. Si todavía no se corrió, el panel sigue
