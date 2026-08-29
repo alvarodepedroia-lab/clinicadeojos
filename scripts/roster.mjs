@@ -39,7 +39,7 @@ export const roster = [
     role: "administrator",
     canManageStaff: true,
     active: true,
-    mustChangePassword: false,
+    mustChangePassword: true,
     note: "Acceso total",
   },
 
