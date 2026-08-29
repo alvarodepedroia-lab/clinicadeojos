@@ -101,3 +101,24 @@ update public.doctors set display_order = 4 where full_name = 'Dr. José Manriqu
 update public.doctors set display_order = 5 where full_name = 'Dr. Gustavo Méndez';
 update public.doctors set display_order = 6 where full_name = 'Dr. Matías Sánchez';
 update public.doctors set display_order = 7 where full_name = 'Dra. Erika Oyola';
+
+-- ─── 4) Verificación ────────────────────────────────────────────────────────
+-- Esto no modifica nada: solo muestra cómo quedó todo, para confirmar de un
+-- vistazo que se aplicó bien. Deberías ver 6 médicos "En agenda", la Dra. Erika
+-- Oyola "Fuera de agenda" al final, y las 5 personas de Administración.
+select
+  'Médico' as tipo,
+  full_name as nombre,
+  case when active then 'En agenda' else 'FUERA DE AGENDA' end as estado,
+  display_order as orden,
+  coalesce(availability_summary, '(sin horario cargado)') as detalle
+from public.doctors
+union all
+select
+  'Administración',
+  full_name,
+  case when active then 'Activo' else 'Inactivo' end,
+  display_order,
+  role
+from public.team_members
+order by tipo desc, orden;
