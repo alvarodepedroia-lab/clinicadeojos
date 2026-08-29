@@ -116,7 +116,7 @@ async function main() {
 
   console.table(summary);
   console.log("\nListo. Las contraseñas salen de STAFF_TEMP_PASSWORD y OWNER_PASSWORD (.env.local).");
-  console.log("Todos, salvo alvaroiasanjuan, deben cambiarlas en el primer ingreso.\n");
+  console.log("Todas las cuentas deben elegir una propia en el primer ingreso.\n");
 }
 
 main().catch((error) => {
