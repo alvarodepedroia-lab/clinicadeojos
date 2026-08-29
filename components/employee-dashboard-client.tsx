@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { downloadSpreadsheet, printSheet, type ExportRow } from "@/lib/panel-export";
 import { formatBlocks, toIsoDate, weekdayNames, type AvailabilityBlock } from "@/lib/availability";
+import { PanelStats } from "@/components/panel-stats";
 
 const statuses = [
   ["new", "Nueva"], ["under_review", "En revisión"], ["entered_in_isalud", "Cargada en iSalud"],
@@ -66,7 +67,7 @@ export default function EmployeeDashboardClient({
   initialStaff?: StaffMember[];
   initialResets?: PasswordResetRequest[];
 }) {
-  const [section, setSection] = useState<"resumen" | "reservas" | "medicos" | "accesos">("resumen");
+  const [section, setSection] = useState<"resumen" | "estadisticas" | "reservas" | "medicos" | "accesos">("resumen");
   const [requests, setRequests] = useState(initialRequests);
   const [doctors, setDoctors] = useState(initialDoctors);
   const [resets, setResets] = useState(initialResets);
@@ -150,6 +151,29 @@ export default function EmployeeDashboardClient({
     } finally { setSavingId(null); }
   }
 
+  async function editBlock(doctor: PanelDoctor, blockId: string, weekday: number, start: string, end: string) {
+    const before = doctors; setSavingId(doctor.id); setMessage("");
+    setDoctors((current) => current.map((item) => (item.id === doctor.id
+      ? {
+          ...item,
+          blocks: item.blocks
+            .map((block) => (block.id === blockId ? { ...block, weekday, start_time: start, end_time: end } : block))
+            .sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)),
+        }
+      : item)));
+    try {
+      const { error } = await createBrowserSupabaseClient()
+        .from("doctor_availability")
+        .update({ weekday, start_time: start, end_time: end })
+        .eq("id", blockId);
+      if (error) throw error;
+      setMessage(`Horario de ${doctor.full_name} actualizado.`);
+    } catch {
+      setDoctors(before);
+      setMessage("No se pudo cambiar el horario. Revisá que no choque con otro ya cargado.");
+    } finally { setSavingId(null); }
+  }
+
   async function removeBlock(doctor: PanelDoctor, blockId: string) {
     const before = doctors; setSavingId(doctor.id); setMessage("");
     setDoctors((current) => current.map((item) => (item.id === doctor.id
@@ -203,6 +227,7 @@ export default function EmployeeDashboardClient({
 
       <nav className="panel-tabs" aria-label="Secciones del panel">
         <button className={section === "resumen" ? "active" : ""} onClick={() => setSection("resumen")}>Resumen</button>
+        <button className={section === "estadisticas" ? "active" : ""} onClick={() => setSection("estadisticas")}>Estadísticas</button>
         <button className={section === "reservas" ? "active" : ""} onClick={() => setSection("reservas")}>
           Reservas <span>{requests.length}</span>
         </button>
@@ -219,6 +244,8 @@ export default function EmployeeDashboardClient({
       {message && <p className="dashboard-message" role="status">{message}</p>}
 
       {section === "resumen" && <Summary requests={requests} doctorNames={doctorNames} />}
+
+      {section === "estadisticas" && <PanelStats requests={requests} doctorNames={doctorNames} />}
 
       {section === "reservas" && (
         <section className="dashboard-card">
@@ -314,6 +341,7 @@ export default function EmployeeDashboardClient({
                 onToggle={() => toggleDoctor(doctor)}
                 onSlotMinutes={(minutes) => updateSlotMinutes(doctor, minutes)}
                 onAddBlock={(weekday, start, end) => addBlock(doctor, weekday, start, end)}
+                onEditBlock={(blockId, weekday, start, end) => editBlock(doctor, blockId, weekday, start, end)}
                 onRemoveBlock={(blockId) => removeBlock(doctor, blockId)}
               />
             ))}
@@ -570,7 +598,7 @@ function ExportBar({ requests, doctorNames }: { requests: AppointmentRequest[]; 
 /* ── Ficha de médico ─────────────────────────────────────────────────────── */
 
 function DoctorCard({
-  doctor, isAdministrator, saving, onToggle, onSlotMinutes, onAddBlock, onRemoveBlock,
+  doctor, isAdministrator, saving, onToggle, onSlotMinutes, onAddBlock, onEditBlock, onRemoveBlock,
 }: {
   doctor: PanelDoctor;
   isAdministrator: boolean;
@@ -578,12 +606,32 @@ function DoctorCard({
   onToggle: () => void;
   onSlotMinutes: (minutes: number) => void;
   onAddBlock: (weekday: number, start: string, end: string) => void;
+  onEditBlock: (blockId: string, weekday: number, start: string, end: string) => void;
   onRemoveBlock: (blockId: string) => void;
 }) {
   const [weekday, setWeekday] = useState(1);
   const [start, setStart] = useState("09:00");
   const [end, setEnd] = useState("12:00");
+  // Cuando hay un bloque en edición, el mismo formulario sirve para modificarlo.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const invalidRange = end <= start;
+
+  function startEditing(block: PanelDoctor["blocks"][number]) {
+    setEditingId(block.id);
+    setWeekday(block.weekday);
+    setStart(block.start_time.slice(0, 5));
+    setEnd(block.end_time.slice(0, 5));
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setWeekday(1); setStart("09:00"); setEnd("12:00");
+  }
+
+  function submit() {
+    if (editingId) { onEditBlock(editingId, weekday, start, end); cancelEditing(); }
+    else onAddBlock(weekday, start, end);
+  }
 
   return (
     <article className={`doctor-card ${doctor.active ? "" : "doctor-inactive"}`}>
@@ -602,15 +650,27 @@ function DoctorCard({
 
       {doctor.blocks.length > 0 && (
         <div className="doctor-blocks">
-          {doctor.blocks.map((block) => (
-            <span className="doctor-block" key={block.id}>
-              {weekdayNames[block.weekday - 1]} {block.start_time.slice(0, 5)}–{block.end_time.slice(0, 5)}
-              {isAdministrator && (
-                <button type="button" disabled={saving} onClick={() => onRemoveBlock(block.id)}
-                  aria-label={`Quitar ${weekdayNames[block.weekday - 1]} de ${block.start_time.slice(0, 5)}`}>×</button>
-              )}
-            </span>
-          ))}
+          {doctor.blocks.map((block) => {
+            const etiqueta = `${weekdayNames[block.weekday - 1]} de ${block.start_time.slice(0, 5)} a ${block.end_time.slice(0, 5)}`;
+            return (
+              <span className={`doctor-block${editingId === block.id ? " editing" : ""}`} key={block.id}>
+                {isAdministrator ? (
+                  <button type="button" className="block-label" disabled={saving}
+                    onClick={() => (editingId === block.id ? cancelEditing() : startEditing(block))}
+                    aria-label={`Cambiar el horario del ${etiqueta}`}>
+                    {weekdayNames[block.weekday - 1]} {block.start_time.slice(0, 5)}–{block.end_time.slice(0, 5)}
+                  </button>
+                ) : (
+                  <span>{weekdayNames[block.weekday - 1]} {block.start_time.slice(0, 5)}–{block.end_time.slice(0, 5)}</span>
+                )}
+                {isAdministrator && (
+                  <button type="button" className="block-remove" disabled={saving}
+                    onClick={() => { if (editingId === block.id) cancelEditing(); onRemoveBlock(block.id); }}
+                    aria-label={`Quitar el ${etiqueta}`}>×</button>
+                )}
+              </span>
+            );
+          })}
         </div>
       )}
 
@@ -624,8 +684,16 @@ function DoctorCard({
             </label>
             <label>Desde<input type="time" step="900" value={start} onChange={(event) => setStart(event.target.value)} /></label>
             <label>Hasta<input type="time" step="900" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
-            <button type="button" disabled={saving || invalidRange} onClick={() => onAddBlock(weekday, start, end)}>Agregar</button>
+            <button type="button" disabled={saving || invalidRange} onClick={submit}>
+              {editingId ? "Guardar" : "Agregar"}
+            </button>
+            {editingId && (
+              <button type="button" className="block-cancel" disabled={saving} onClick={cancelEditing}>Cancelar</button>
+            )}
           </div>
+          {editingId
+            ? <p className="doctor-hint">Estás cambiando un horario ya cargado. Guardá para aplicarlo.</p>
+            : doctor.blocks.length > 0 && <p className="doctor-hint">Tocá un horario de arriba para modificarlo.</p>}
           {invalidRange && <p className="doctor-warning">La hora de fin tiene que ser posterior a la de inicio.</p>}
 
           <div className="doctor-controls">
