@@ -7,6 +7,8 @@
  *
  *   NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
  *   SUPABASE_SERVICE_ROLE_KEY=...
+ *   STAFF_TEMP_PASSWORD=...        (mínimo 6 caracteres)
+ *   OWNER_PASSWORD=...            (cuenta alvaroiasanjuan)
  *
  * La service_role key es la llave maestra de la base: se queda en tu máquina.
  * .env.local está ignorado por git, así que no se sube al repositorio. NUNCA la
@@ -18,7 +20,7 @@
 
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { resolveRoster, temporaryPassword } from "./roster.mjs";
+import { resolveRoster } from "./roster.mjs";
 
 function loadEnv() {
   try {
@@ -36,11 +38,14 @@ loadEnv();
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!url || !serviceKey) {
+if (!url || !serviceKey || !process.env.STAFF_TEMP_PASSWORD || !process.env.OWNER_PASSWORD) {
   console.error("\nFaltan datos. Creá un archivo .env.local en la raíz del proyecto con:\n");
   console.error("  NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co");
-  console.error("  SUPABASE_SERVICE_ROLE_KEY=...\n");
-  console.error("Las dos están en Supabase → Project Settings → API Keys.\n");
+  console.error("  SUPABASE_SERVICE_ROLE_KEY=...");
+  console.error("  STAFF_TEMP_PASSWORD=...   (temporal del personal, mínimo 6 caracteres)");
+  console.error("  OWNER_PASSWORD=...        (cuenta alvaroiasanjuan)\n");
+  console.error("Las dos primeras están en Supabase → Project Settings → API Keys.");
+  console.error("Las contraseñas las elegís vos: no se guardan en el repositorio.\n");
   process.exit(1);
 }
 
@@ -110,9 +115,8 @@ async function main() {
   }
 
   console.table(summary);
-  console.log(`\nContraseña temporal para todos: ${temporaryPassword}`);
-  console.log("La cuenta alvaroiasanjuan conserva su propia contraseña.");
-  console.log("Todos, salvo alvaroiasanjuan, deben cambiarla en el primer ingreso.\n");
+  console.log("\nListo. Las contraseñas salen de STAFF_TEMP_PASSWORD y OWNER_PASSWORD (.env.local).");
+  console.log("Todos, salvo alvaroiasanjuan, deben cambiarlas en el primer ingreso.\n");
 }
 
 main().catch((error) => {

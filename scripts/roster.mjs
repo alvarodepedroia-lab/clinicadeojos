@@ -7,9 +7,25 @@
  *  primer ingreso. La única excepción es la cuenta de acceso total.
  */
 
-export const temporaryPassword = "clinicadeojos";
+/** Las contraseñas NO van en este archivo: el repositorio es público.
+ *  Se leen de .env.local, que git ignora. */
 export const localDomain = "clinicadeojos.local";
 export const noticeInbox = "clinicadeojosts@gmail.com";
+
+function requireSecret(name, hint) {
+  const value = process.env[name];
+  if (!value || value.length < 6) {
+    throw new Error(
+      `Falta ${name} en .env.local (mínimo 6 caracteres, que es lo que exige Supabase).\n  ${hint}`,
+    );
+  }
+  return value;
+}
+
+export const temporaryPassword = () =>
+  requireSecret("STAFF_TEMP_PASSWORD", "Contraseña temporal para todo el personal.");
+const ownerPassword = () =>
+  requireSecret("OWNER_PASSWORD", "Contraseña de la cuenta alvaroiasanjuan.");
 
 /** El correo interno es ficticio a propósito: el ingreso es por usuario, no por
  *  mail. La cuenta de acceso total conserva un correo real para poder recuperar
@@ -19,7 +35,7 @@ export const roster = [
     username: "alvaroiasanjuan",
     fullName: "Álvaro De Pedro",
     email: "alvarodepedro93@gmail.com",
-    password: "iasanjuan7777",
+    password: ownerPassword,
     role: "administrator",
     canManageStaff: true,
     active: true,
@@ -47,14 +63,17 @@ export const roster = [
   { username: "erikaoyola", fullName: "Dra. Erika Oyola", role: "operator", active: false, note: "Fuera de agenda" },
 ];
 
-/** Completa los valores por defecto de cada fila del padrón. */
+/** Completa los valores por defecto y resuelve las contraseñas desde el entorno. */
 export function resolveRoster() {
-  return roster.map((person) => ({
-    canManageStaff: false,
-    active: true,
-    mustChangePassword: true,
-    password: temporaryPassword,
-    email: `${person.username}@${localDomain}`,
-    ...person,
-  }));
+  return roster.map((person) => {
+    const resolved = {
+      canManageStaff: false,
+      active: true,
+      mustChangePassword: true,
+      password: temporaryPassword,
+      email: `${person.username}@${localDomain}`,
+      ...person,
+    };
+    return { ...resolved, password: resolved.password() };
+  });
 }
