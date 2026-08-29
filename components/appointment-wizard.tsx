@@ -14,12 +14,6 @@ import {
   type PublicDoctor,
 } from "@/lib/availability";
 
-const preferences = [
-  { key: "preferred", label: "Opción principal", dateName: "preferredDate", timeName: "preferredTimeBand" },
-  { key: "alternative", label: "Segunda alternativa", dateName: "alternativeDate", timeName: "alternativeTimeBand" },
-  { key: "third", label: "Tercera alternativa", dateName: "thirdDate", timeName: "thirdTimeBand" },
-] as const;
-
 /** Horarios generales de la clínica, para cuando el paciente no elige profesional. */
 function clinicSlots() {
   const slots: string[] = [];
@@ -31,7 +25,7 @@ function clinicSlots() {
 
 export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
   const [doctorName, setDoctorName] = useState("");
-  const [dates, setDates] = useState<Record<string, string>>({});
+  const [date, setDate] = useState("");
 
   const doctor = doctors.find((item) => item.name === doctorName);
   // Sin profesional elegido, la agenda es la unión de todas las agendas activas.
@@ -48,30 +42,26 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
     [openDays],
   );
 
-  function slotsFor(isoDate?: string) {
-    if (!isoDate) return [];
-    const [year, month, day] = isoDate.split("-").map(Number);
+  const slots = useMemo(() => {
+    if (!date) return [];
+    const [year, month, day] = date.split("-").map(Number);
     const weekday = isoWeekday(new Date(year, month - 1, day));
-    const slots = slotsForWeekday(blocks, weekday, slotMinutes);
-    return slots.length ? slots : clinicSlots();
-  }
-
-  function pickDate(key: string, value: string) {
-    setDates((current) => ({ ...current, [key]: value }));
-  }
+    const found = slotsForWeekday(blocks, weekday, slotMinutes);
+    return found.length ? found : clinicSlots();
+  }, [date, blocks, slotMinutes]);
 
   return (
     <form className="appointment-wizard" action="/api/appointment-requests" method="post">
       <ol className="wizard-progress" aria-label="Pasos de la solicitud">
-        {["Atención", "Profesional", "Fecha y horario", "Tus datos"].map((label, index) => (
+        {["Atención", "Cobertura", "Tu turno", "Tus datos"].map((label, index) => (
           <li className="active" key={label}><span>{index + 1}</span><b>{label}</b></li>
         ))}
       </ol>
 
       <fieldset>
-        <legend>1. Atención y profesional</legend>
+        <legend>1. Tipo de atención</legend>
         <div className="field-grid">
-          <label>Tipo de atención
+          <label>¿Qué necesitás?
             <select name="careType" defaultValue="first_consultation">
               <option value="first_consultation">Primera consulta</option>
               <option value="follow_up">Consulta de control</option>
@@ -79,14 +69,7 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
               <option value="other_service">Otra prestación</option>
             </select>
           </label>
-          <label>Profesional <small>Opcional</small>
-            <select name="doctorName" value={doctorName} onChange={(event) => { setDoctorName(event.target.value); setDates({}); }}>
-              <option value="">Primer médico disponible</option>
-              {doctors.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
-            </select>
-          </label>
         </div>
-        {doctor && !rotating && <p className="wizard-help">Atiende: {doctor.schedule}</p>}
       </fieldset>
 
       <fieldset>
@@ -106,50 +89,52 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
       </fieldset>
 
       <fieldset>
-        <legend>3. Fecha y horario</legend>
-        {rotating ? (
+        <legend>3. Tu turno</legend>
+        <p className="wizard-help">
+          Solo se muestran los días y horarios en los que hay atención, hasta dos meses adelante.
+          La clínica confirma la disponibilidad antes de darte el turno.
+        </p>
+
+        <div className={`booking-row${rotating ? " booking-row-single" : ""}`}>
+          <label>Profesional
+            <select
+              name="doctorName"
+              value={doctorName}
+              onChange={(event) => { setDoctorName(event.target.value); setDate(""); }}
+            >
+              <option value="">Primer médico disponible</option>
+              {doctors.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+
+          {!rotating && (
+            <>
+              <label>Día
+                <select name="preferredDate" value={date} required onChange={(event) => setDate(event.target.value)}>
+                  <option value="">Elegí un día</option>
+                  {availableDates.map((isoDate) => (
+                    <option key={isoDate} value={isoDate}>{formatDateLabel(isoDate)}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label>Horario
+                <select name="preferredTimeBand" required disabled={!date} defaultValue="">
+                  <option value="">{date ? "Elegí un horario" : "Elegí el día"}</option>
+                  {slots.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
+                </select>
+              </label>
+            </>
+          )}
+        </div>
+
+        {rotating && (
           <p className="wizard-notice" role="status">
             {doctor?.name} atiende con horarios rotativos. Enviá tus datos y la clínica se comunica
             con vos para coordinar el día y la hora.
           </p>
-        ) : (
-          <>
-            <p className="wizard-help">
-              Solo se muestran los días y horarios en los que hay atención. La clínica confirma la
-              disponibilidad antes de darte el turno.
-            </p>
-            <div className="preference-grid">
-              {preferences.map((preference, index) => {
-                const chosenDate = dates[preference.key] ?? "";
-                const slots = slotsFor(chosenDate);
-                return (
-                  <div key={preference.key}>
-                    <b>{preference.label}{index > 0 && <small> Opcional</small>}</b>
-                    <label>Fecha
-                      <select
-                        name={preference.dateName}
-                        value={chosenDate}
-                        required={index === 0}
-                        onChange={(event) => pickDate(preference.key, event.target.value)}
-                      >
-                        <option value="">Elegí una fecha</option>
-                        {availableDates.map((isoDate) => (
-                          <option key={isoDate} value={isoDate}>{formatDateLabel(isoDate)}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>Horario
-                      <select name={preference.timeName} required={index === 0} disabled={!chosenDate} defaultValue="">
-                        <option value="">{chosenDate ? "Elegí un horario" : "Elegí primero la fecha"}</option>
-                        {slots.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
-                      </select>
-                    </label>
-                  </div>
-                );
-              })}
-            </div>
-          </>
         )}
+        {!rotating && doctor && <p className="wizard-help booking-note">Atiende: {doctor.schedule}</p>}
       </fieldset>
 
       <fieldset>

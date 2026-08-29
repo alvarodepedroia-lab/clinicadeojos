@@ -59,17 +59,36 @@ export function weekdaysWithAgenda(blocks: AvailabilityBlock[]) {
     .sort((a, b) => a - b);
 }
 
-/** Próximas fechas hábiles en las que atiende. Arranca mañana: no se piden
- *  turnos para el mismo día desde la web. */
-export function upcomingDates(weekdays: number[], limit = 40, horizonDays = 90) {
+/** Hasta cuándo se puede pedir un turno desde la web. Más allá de dos meses la
+ *  agenda todavía no está definida (licencias, rotaciones), así que no se ofrece. */
+export const bookingMonthsAhead = 2;
+
+function bookingWindow() {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+  const from = new Date(today);
+  from.setDate(today.getDate() + 1); // desde mañana: no se piden turnos para hoy
+  const until = new Date(today);
+  until.setMonth(until.getMonth() + bookingMonthsAhead);
+  return { from, until };
+}
+
+export function withinBookingWindow(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return false;
+  date.setHours(12, 0, 0, 0);
+  const { from, until } = bookingWindow();
+  return date >= from && date <= until;
+}
+
+/** Próximas fechas en las que atiende, dentro de la ventana de reserva. */
+export function upcomingDates(weekdays: number[]) {
   if (!weekdays.length) return [] as string[];
   const dates: string[] = [];
-  const cursor = new Date();
-  cursor.setHours(12, 0, 0, 0);
-  for (let day = 1; day <= horizonDays && dates.length < limit; day += 1) {
-    const candidate = new Date(cursor);
-    candidate.setDate(cursor.getDate() + day);
-    if (weekdays.includes(isoWeekday(candidate))) dates.push(toIsoDate(candidate));
+  const { from, until } = bookingWindow();
+  for (const cursor = new Date(from); cursor <= until; cursor.setDate(cursor.getDate() + 1)) {
+    if (weekdays.includes(isoWeekday(cursor))) dates.push(toIsoDate(cursor));
   }
   return dates;
 }
@@ -112,6 +131,7 @@ export function isValidPreference(
   const [year, month, day] = isoDate.split("-").map(Number);
   const date = new Date(year, month - 1, day);
   if (Number.isNaN(date.getTime())) return false;
+  if (!withinBookingWindow(isoDate)) return false;
   const weekday = isoWeekday(date);
   if (!blocks.length) return false;
   if (!weekdaysWithAgenda(blocks).includes(weekday)) return false;
