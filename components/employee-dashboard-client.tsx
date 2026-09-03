@@ -7,13 +7,20 @@ import { downloadSpreadsheet, printSheet, type ExportRow } from "@/lib/panel-exp
 import { formatBlocks, toIsoDate, weekdayNames, type AvailabilityBlock } from "@/lib/availability";
 import { PanelStats } from "@/components/panel-stats";
 
+// Los tres pasos del circuito de trabajo. Son los únicos que se pueden elegir.
 const statuses = [
   ["new", "Nueva"], ["under_review", "En revisión"], ["entered_in_isalud", "Cargada en iSalud"],
-  ["confirmed", "Confirmada"], ["reschedule_requested", "Reprogramar"], ["rejected", "Rechazada"],
-  ["cancelled", "Cancelada"],
 ] as const;
 
-const pendingStatuses = ["new", "under_review", "reschedule_requested"];
+// El resto sigue existiendo en la base: hay reservas viejas que los usan y no se
+// pierden, solo que ya no se ofrecen para marcar.
+const legacyStatuses = [
+  ["confirmed", "Confirmada"], ["reschedule_requested", "Reprogramar"],
+  ["rejected", "Rechazada"], ["cancelled", "Cancelada"],
+] as const;
+
+const allStatuses = [...statuses, ...legacyStatuses];
+const pendingStatuses = ["new", "under_review"];
 
 export type AppointmentRequest = {
   id: string; request_code: string; first_name: string; last_name: string; dni: string;
@@ -21,7 +28,7 @@ export type AppointmentRequest = {
   coverage_name: string | null; doctor_id: string | null;
   preferred_date: string | null; preferred_time_band: string | null;
   alternative_date: string | null; alternative_time_band: string | null;
-  status: (typeof statuses)[number][0]; created_at: string;
+  status: (typeof allStatuses)[number][0]; created_at: string;
 };
 
 export type PanelDoctor = {
@@ -51,7 +58,7 @@ const coverageLabels: Record<string, string> = {
 };
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-const statusLabel = (status: string) => statuses.find(([value]) => value === status)?.[1] ?? status;
+const statusLabel = (status: string) => allStatuses.find(([value]) => value === status)?.[1] ?? status;
 const formatDate = (date: string | null) => (date ? dateFormat.format(new Date(`${date}T12:00:00`)) : "A coordinar");
 
 const today = () => toIsoDate(new Date());
@@ -263,7 +270,9 @@ export default function EmployeeDashboardClient({
             <label>Estado
               <select value={filter} onChange={(event) => setFilter(event.target.value)}>
                 <option value="all">Todos los estados</option>
-                {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {allStatuses
+                  .filter(([value]) => statuses.some(([v]) => v === value) || requests.some((r) => r.status === value))
+                  .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
           </div>
@@ -308,6 +317,9 @@ export default function EmployeeDashboardClient({
                           onChange={(event) => updateStatus(request.id, event.target.value as AppointmentRequest["status"])}
                         >
                           {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                          {!statuses.some(([value]) => value === request.status) && (
+                            <option value={request.status}>{statusLabel(request.status)} (anterior)</option>
+                          )}
                         </select>
                       </td>
                     </tr>
@@ -428,7 +440,9 @@ function Summary({ requests, doctorNames }: { requests: AppointmentRequest[]; do
   const stats = useMemo(() => {
     const now = today();
     const monthStart = firstOfMonth();
-    const byStatus = statuses.map(([value, label]) => ({
+    const byStatus = allStatuses
+      .filter(([value]) => statuses.some(([v]) => v === value) || requests.some((r) => r.status === value))
+      .map(([value, label]) => ({
       value, label, count: requests.filter((request) => request.status === value).length,
     }));
     const byDoctor = Object.entries(
@@ -453,7 +467,7 @@ function Summary({ requests, doctorNames }: { requests: AppointmentRequest[]; do
       today: requests.filter((request) => request.preferred_date === now).length,
       month: requests.filter((request) => request.created_at.slice(0, 10) >= monthStart).length,
       pending: requests.filter((request) => pendingStatuses.includes(request.status)).length,
-      confirmed: requests.filter((request) => request.status === "confirmed").length,
+      loaded: requests.filter((request) => request.status === "entered_in_isalud").length,
       byStatus, byDoctor, upcoming,
     };
   }, [requests, doctorNames]);
@@ -465,7 +479,7 @@ function Summary({ requests, doctorNames }: { requests: AppointmentRequest[]; do
       <section className="dashboard-summary" aria-label="Resumen del día">
         <article className="tone-navy"><span>Turnos para hoy</span><strong>{stats.today}</strong><small>pedidos con fecha de hoy</small></article>
         <article className="tone-blue"><span>Pendientes</span><strong>{stats.pending}</strong><small>para revisar o coordinar</small></article>
-        <article><span>Confirmadas</span><strong>{stats.confirmed}</strong><small>turnos ya asignados</small></article>
+        <article><span>Cargadas en iSalud</span><strong>{stats.loaded}</strong><small>ya pasadas al sistema</small></article>
         <article><span>Este mes</span><strong>{stats.month}</strong><small>solicitudes recibidas</small></article>
       </section>
 

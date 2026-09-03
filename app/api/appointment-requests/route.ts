@@ -52,6 +52,12 @@ export async function POST(request: Request) {
     first_name: value.firstName, last_name: value.lastName, dni: value.dni, phone: value.phone, email: value.email || null, birth_date: value.birthDate || null, returning_patient: value.returningPatient,
   });
   if (error) return NextResponse.json({ message: "No pudimos registrar la solicitud. Intentá nuevamente o comunicate por WhatsApp." }, { status: 500 });
-  if (isFormSubmission) return NextResponse.redirect(new URL(`/turnos/confirmacion?codigo=${requestCode}`, request.url), { status: 303 });
+  if (isFormSubmission) {
+    const destino = new URL("/turnos/confirmacion", request.url);
+    destino.searchParams.set("codigo", requestCode);
+    if (value.preferredDate) destino.searchParams.set("fecha", value.preferredDate);
+    if (value.preferredTimeBand) destino.searchParams.set("hora", value.preferredTimeBand);
+    return NextResponse.redirect(destino, { status: 303 });
+  }
   return NextResponse.json({ requestCode }, { status: 201 });
 }
