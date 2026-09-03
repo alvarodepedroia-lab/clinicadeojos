@@ -9,6 +9,8 @@ export type PublicDoctor = {
   schedule: string;
   slotMinutes: number;
   blocks: AvailabilityBlock[];
+  /** Horarios ya reservados, como "AAAA-MM-DD HH:MM". */
+  taken: string[];
 };
 
 /** Horario de atención de la clínica. Ningún turno puede caer fuera de esto. */
@@ -91,6 +93,27 @@ export function upcomingDates(weekdays: number[]) {
     if (weekdays.includes(isoWeekday(cursor))) dates.push(toIsoDate(cursor));
   }
   return dates;
+}
+
+export function isoWeekdayOf(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return isoWeekday(new Date(year, month - 1, day));
+}
+
+/** Horarios todavía libres para un día. Con un solo profesional devuelve los
+ *  suyos; con varios, la unión: alcanza con que uno lo tenga libre. */
+export function freeSlots(doctors: PublicDoctor[], isoDate: string) {
+  const weekday = isoWeekdayOf(isoDate);
+  const libres = new Set<string>();
+  for (const doctor of doctors) {
+    const tomados = new Set(
+      doctor.taken.filter((t) => t.startsWith(isoDate)).map((t) => t.slice(11, 16)),
+    );
+    for (const slot of slotsForWeekday(doctor.blocks, weekday, doctor.slotMinutes)) {
+      if (!tomados.has(slot)) libres.add(slot);
+    }
+  }
+  return [...libres].sort();
 }
 
 const listFormatter = new Intl.ListFormat("es-AR", { style: "long", type: "conjunction" });

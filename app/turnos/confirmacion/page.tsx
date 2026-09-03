@@ -7,9 +7,40 @@ const whatsapp = `https://wa.me/${site.whatsapp}`;
 export default async function TurnoConfirmacion({
   searchParams,
 }: {
-  searchParams: Promise<{ codigo?: string; fecha?: string; hora?: string }>;
+  searchParams: Promise<{ codigo?: string; fecha?: string; hora?: string; error?: string }>;
 }) {
-  const { codigo, fecha, hora } = await searchParams;
+  const { codigo, fecha, hora, error } = await searchParams;
+
+  // Dos personas mandaron el mismo horario casi al mismo tiempo y la base
+  // rechazó el segundo. No se registró nada: hay que elegir otro.
+  if (error === "ocupado") {
+    return (
+      <main className="turno-ok">
+        <section>
+          <a className="brand" href="/"><img src="/logo-clinica-de-ojos.png" alt="Clínica de Ojos" /></a>
+          <span className="turno-check turno-check-aviso" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 8v5M12 17h.01" />
+            </svg>
+          </span>
+          <p className="eyebrow">Horario no disponible</p>
+          <h1>Ese turno acaba de ser tomado</h1>
+          <p className="turno-cuando">
+            Otra persona reservó ese horario mientras completabas el formulario.
+            Tu solicitud no se registró: volvé y elegí otro horario.
+          </p>
+          <p className="turno-nota">
+            Si necesitás ayuda para conseguir un turno, escribinos por WhatsApp y te acomodamos.
+          </p>
+          <div className="turno-acciones">
+            <a className="button" href="/#turnos">Elegir otro horario</a>
+            <a className="text-link" href={whatsapp} target="_blank" rel="noreferrer">Escribirnos por WhatsApp →</a>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   const valida = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha);
   // Sin fecha es el caso de los horarios rotativos: la clínica coordina.
   const dia = valida ? formatDateLabel(fecha).replace(",", "").toLocaleLowerCase("es-AR") : null;

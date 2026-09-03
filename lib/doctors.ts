@@ -13,6 +13,7 @@ function fallback(): PublicDoctor[] {
     schedule: doctor.schedule,
     slotMinutes: 30,
     blocks: [],
+    taken: [],
   }));
 }
 
@@ -20,9 +21,18 @@ export async function loadPublicDoctors(): Promise<PublicDoctor[]> {
   const client = createPublicApiClient();
   if (!client) return fallback();
 
+  // Solo devuelve profesional, día y hora: ningún dato del paciente.
+  const { data: taken } = await client.rpc("taken_slots");
+  const tomadosPorMedico = new Map<string, string[]>();
+  for (const fila of (taken ?? []) as { doctor_id: string; slot_date: string; slot_time: string }[]) {
+    const lista = tomadosPorMedico.get(fila.doctor_id) ?? [];
+    lista.push(`${fila.slot_date} ${fila.slot_time.slice(0, 5)}`);
+    tomadosPorMedico.set(fila.doctor_id, lista);
+  }
+
   const { data, error } = await client
     .from("doctors")
-    .select("full_name, description, availability_summary, slot_minutes, display_order, doctor_availability(weekday, start_time, end_time, active)")
+    .select("id, full_name, description, availability_summary, slot_minutes, display_order, doctor_availability(weekday, start_time, end_time, active)")
     .eq("active", true)
     .order("display_order", { ascending: true });
 
@@ -40,6 +50,7 @@ export async function loadPublicDoctors(): Promise<PublicDoctor[]> {
         || (blocks.length ? formatBlocks(blocks) : "Consultá disponibilidad por WhatsApp."),
       slotMinutes: (row.slot_minutes as number | null) ?? 30,
       blocks,
+      taken: tomadosPorMedico.get(row.id as string) ?? [],
     };
   });
 }

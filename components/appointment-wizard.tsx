@@ -4,8 +4,7 @@ import { useMemo, useState } from "react";
 import {
   clinicHours,
   formatDateLabel,
-  isoWeekday,
-  slotsForWeekday,
+  freeSlots,
   toMinutes,
   toTimeLabel,
   upcomingDates,
@@ -28,27 +27,26 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
   const [date, setDate] = useState("");
 
   const doctor = doctors.find((item) => item.name === doctorName);
-  // Sin profesional elegido, la agenda es la unión de todas las agendas activas.
-  const blocks: AvailabilityBlock[] = useMemo(
-    () => (doctor ? doctor.blocks : doctors.flatMap((item) => item.blocks)),
-    [doctor, doctors],
-  );
-  const slotMinutes = doctor?.slotMinutes ?? 30;
+  // Sin profesional elegido, se mira la agenda de todo el equipo: alcanza con
+  // que uno tenga el horario libre.
+  const equipo = useMemo(() => (doctor ? [doctor] : doctors), [doctor, doctors]);
+  const blocks: AvailabilityBlock[] = useMemo(() => equipo.flatMap((item) => item.blocks), [equipo]);
   // Un profesional cargado pero sin bloques es un caso real: horarios rotativos.
   const rotating = Boolean(doctor) && blocks.length === 0;
   const openDays = useMemo(() => weekdaysWithAgenda(blocks), [blocks]);
-  const availableDates = useMemo(
-    () => upcomingDates(openDays.length ? openDays : clinicHours.weekdays),
-    [openDays],
-  );
+
+  // Solo se ofrecen los días que todavía tienen algún horario sin reservar.
+  const availableDates = useMemo(() => {
+    const candidatas = upcomingDates(openDays.length ? openDays : clinicHours.weekdays);
+    if (!blocks.length) return candidatas;
+    return candidatas.filter((isoDate) => freeSlots(equipo, isoDate).length > 0);
+  }, [openDays, blocks, equipo]);
 
   const slots = useMemo(() => {
     if (!date) return [];
-    const [year, month, day] = date.split("-").map(Number);
-    const weekday = isoWeekday(new Date(year, month - 1, day));
-    const found = slotsForWeekday(blocks, weekday, slotMinutes);
-    return found.length ? found : clinicSlots();
-  }, [date, blocks, slotMinutes]);
+    const libres = freeSlots(equipo, date);
+    return libres.length || blocks.length ? libres : clinicSlots();
+  }, [date, equipo, blocks]);
 
   return (
     <form className="appointment-wizard" action="/api/appointment-requests" method="post">
@@ -91,8 +89,8 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
       <fieldset>
         <legend>3. Tu turno</legend>
         <p className="wizard-help">
-          Solo se muestran los días y horarios en los que hay atención, hasta dos meses adelante.
-          La clínica confirma la disponibilidad antes de darte el turno.
+          Solo se muestran los horarios libres, hasta dos meses adelante. Al enviar la solicitud
+          el turno queda reservado a tu nombre.
         </p>
 
         <div className={`booking-row${rotating ? " booking-row-single" : ""}`}>
@@ -119,8 +117,10 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
               </label>
 
               <label>Horario
-                <select name="preferredTimeBand" required disabled={!date} defaultValue="">
-                  <option value="">{date ? "Elegí un horario" : "Elegí el día"}</option>
+                <select name="preferredTimeBand" required disabled={!date || !slots.length} defaultValue="">
+                  <option value="">
+                    {!date ? "Elegí el día" : slots.length ? "Elegí un horario" : "Sin horarios libres"}
+                  </option>
                   {slots.map((slot) => <option key={slot} value={slot}>{slot}</option>)}
                 </select>
               </label>

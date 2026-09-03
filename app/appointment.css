@@ -25,3 +25,4 @@
 .turno-nota{font-size:.79rem;line-height:1.5;color:var(--muted);max-width:42ch;margin:0 auto 1.8rem}
 .turno-acciones{display:flex;flex-wrap:wrap;gap:1.1rem;align-items:center;justify-content:center}
 @media(max-width:520px){.turno-ok section{padding:1.6rem 1.2rem}.turno-acciones{flex-direction:column;gap:.9rem}}
+.turno-check-aviso{background:#fdf1e0;color:#9a5a12}

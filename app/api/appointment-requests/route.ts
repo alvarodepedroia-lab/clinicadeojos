@@ -51,7 +51,18 @@ export async function POST(request: Request) {
     preferred_date: value.preferredDate || null, preferred_time_band: value.preferredTimeBand || null, alternative_date: value.alternativeDate || null, alternative_time_band: value.alternativeTimeBand || null, third_date: value.thirdDate || null, third_time_band: value.thirdTimeBand || null,
     first_name: value.firstName, last_name: value.lastName, dni: value.dni, phone: value.phone, email: value.email || null, birth_date: value.birthDate || null, returning_patient: value.returningPatient,
   });
-  if (error) return NextResponse.json({ message: "No pudimos registrar la solicitud. Intentá nuevamente o comunicate por WhatsApp." }, { status: 500 });
+  if (error) {
+    // La base tiene un índice único por profesional, día y hora. Si dos personas
+    // mandan el mismo horario a la vez, la segunda cae acá.
+    const ocupado = error.code === "23505" && error.message.includes("slot_unique");
+    if (ocupado && isFormSubmission) {
+      return NextResponse.redirect(new URL("/turnos/confirmacion?error=ocupado", request.url), { status: 303 });
+    }
+    if (ocupado) {
+      return NextResponse.json({ message: "Ese horario acaba de ser reservado por otra persona. Elegí otro." }, { status: 409 });
+    }
+    return NextResponse.json({ message: "No pudimos registrar la solicitud. Intentá nuevamente o comunicate por WhatsApp." }, { status: 500 });
+  }
   if (isFormSubmission) {
     const destino = new URL("/turnos/confirmacion", request.url);
     destino.searchParams.set("codigo", requestCode);
