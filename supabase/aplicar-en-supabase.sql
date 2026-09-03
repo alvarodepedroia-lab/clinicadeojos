@@ -391,7 +391,13 @@ using (public.current_staff_role() = 'administrator')
 with check (public.current_staff_role() = 'administrator');
 
 
--- ─── 7) Verificación ────────────────────────────────────────────────────────
+-- ─── 7) Orden de dos profesionales ──────────────────────────────────────────
+-- El Dr. Mauricio Sansó pasa al segundo lugar y la Dra. Carolina Lorenzo al tercero.
+update public.doctors set display_order = 2 where full_name = 'Dr. Mauricio Sansó';
+update public.doctors set display_order = 3 where full_name = 'Dra. Carolina Lorenzo';
+
+
+-- ─── 8) Verificación ────────────────────────────────────────────────────────
 -- No modifica nada: muestra cómo quedó todo. Deberías ver 6 médicos "En agenda",
 -- la Dra. Erika Oyola "FUERA DE AGENDA", las 5 personas de Administración, y
 -- la agenda cargada de cada profesional.

@@ -6,8 +6,8 @@ export const site = { whatsapp: "5492646708422", instagram: "https://www.instagr
 
 export const doctors = [
   { name: "Dra. Celia Larrea", role: "Gerenta · Profesional de Clínica de Ojos", schedule: "Lunes, miércoles y viernes de 14:30 a 17:30. Martes de 08:30 a 11:30." },
-  { name: "Dra. Carolina Lorenzo", role: "Profesional de Clínica de Ojos", schedule: "Miércoles y jueves de 14:30 a 16:30." },
   { name: "Dr. Mauricio Sansó", role: "Profesional de Clínica de Ojos", schedule: "Horarios rotativos. Consultar disponibilidad." },
+  { name: "Dra. Carolina Lorenzo", role: "Profesional de Clínica de Ojos", schedule: "Miércoles y jueves de 14:30 a 16:30." },
   { name: "Dr. José Manrique", role: "Profesional de Clínica de Ojos", schedule: "Lunes de 16:30 a 19:30." },
   { name: "Dr. Gustavo Méndez", role: "Profesional de Clínica de Ojos", schedule: "Lunes y viernes de 10:30 a 12:30. Martes y jueves de 16:00 a 18:30." },
   { name: "Dr. Matías Sánchez", role: "Profesional de Clínica de Ojos", schedule: "Jueves de 08:30 a 10:30." },
