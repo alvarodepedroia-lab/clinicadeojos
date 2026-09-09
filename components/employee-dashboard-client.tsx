@@ -7,9 +7,10 @@ import { downloadSpreadsheet, printSheet, type ExportRow } from "@/lib/panel-exp
 import { formatBlocks, toIsoDate, weekdayNames, type AvailabilityBlock } from "@/lib/availability";
 import { PanelStats } from "@/components/panel-stats";
 
-// Los tres pasos del circuito de trabajo. Son los únicos que se pueden elegir.
+// Los pasos del circuito de trabajo. Son los únicos que se pueden elegir.
 const statuses = [
-  ["new", "Nueva"], ["under_review", "En revisión"], ["entered_in_isalud", "Cargada en iSalud"],
+  ["new", "Nueva"], ["under_review", "En revisión"],
+  ["entered_in_isalud", "Cargada en iSalud"], ["attended", "Atendido"],
 ] as const;
 
 // El resto sigue existiendo en la base: hay reservas viejas que los usan y no se
@@ -83,6 +84,8 @@ export default function EmployeeDashboardClient({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const isAdministrator = profile.role === "administrator";
+  // Administración y recepción mueven la reserva por todo el circuito.
+  const canEditStatus = isAdministrator || profile.role === "reception";
 
   const doctorNames = useMemo(
     () => Object.fromEntries(doctors.map((doctor) => [doctor.id, doctor.full_name])),
@@ -107,6 +110,20 @@ export default function EmployeeDashboardClient({
     } catch {
       setRequests(before);
       setMessage("No se pudo guardar el cambio. Intentá de nuevo.");
+    } finally { setSavingId(null); }
+  }
+
+  // Los médicos no cambian estados, pero sí pueden cerrar el circuito.
+  async function markAttended(id: string) {
+    const before = requests; setSavingId(id); setMessage("");
+    setRequests((current) => current.map((request) => (request.id === id ? { ...request, status: "attended" } : request)));
+    try {
+      const { error } = await createBrowserSupabaseClient().rpc("mark_attended", { request_id: id });
+      if (error) throw error;
+      setMessage("Turno marcado como atendido.");
+    } catch {
+      setRequests(before);
+      setMessage("No se pudo marcar el turno. Intentá de nuevo.");
     } finally { setSavingId(null); }
   }
 
@@ -310,17 +327,29 @@ export default function EmployeeDashboardClient({
                         </small>
                       </td>
                       <td>
-                        <select
-                          className={`status-select status-${request.status}`}
-                          value={request.status}
-                          disabled={savingId === request.id}
-                          onChange={(event) => updateStatus(request.id, event.target.value as AppointmentRequest["status"])}
-                        >
-                          {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                          {!statuses.some(([value]) => value === request.status) && (
-                            <option value={request.status}>{statusLabel(request.status)} (anterior)</option>
-                          )}
-                        </select>
+                        {canEditStatus ? (
+                          <select
+                            className={`status-select status-${request.status}`}
+                            value={request.status}
+                            disabled={savingId === request.id}
+                            onChange={(event) => updateStatus(request.id, event.target.value as AppointmentRequest["status"])}
+                          >
+                            {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                            {!statuses.some(([value]) => value === request.status) && (
+                              <option value={request.status}>{statusLabel(request.status)} (anterior)</option>
+                            )}
+                          </select>
+                        ) : (
+                          <div className="status-readonly">
+                            <span className={`status-chip status-${request.status}`}>{statusLabel(request.status)}</span>
+                            {request.status !== "attended" && (
+                              <button type="button" className="mark-attended" disabled={savingId === request.id}
+                                onClick={() => markAttended(request.id)}>
+                                Marcar atendido
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}

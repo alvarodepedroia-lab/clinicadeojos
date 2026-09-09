@@ -111,9 +111,9 @@ export function PanelStats({
 
       <div className="stat-tiles">
         <article><span>Turnos</span><strong>{datos.total}</strong><small>en el período</small></article>
-        <article><span>Día más pedido</span><strong>{capitalizar(diaTop?.nombre ?? "—")}</strong><small>{diaTop?.total ?? 0} turnos</small></article>
+        <article><span>Día más pedido</span><strong>{capitalizar(diaTop?.nombre ?? "—")}</strong><small>{diaTop?.total ?? 0} {diaTop?.total === 1 ? "turno" : "turnos"}</small></article>
         <article><span>Franja preferida</span><strong>{franjaTop}</strong><small>{totalFranja ? `${Math.round((Math.max(datos.mañana, datos.tarde) / totalFranja) * 100)}% de los turnos` : "sin datos"}</small></article>
-        <article><span>Cobertura más frecuente</span><strong>{datos.porCobertura[0]?.nombre ?? "—"}</strong><small>{datos.porCobertura[0]?.total ?? 0} turnos</small></article>
+        <article><span>Cobertura más frecuente</span><strong>{datos.porCobertura[0]?.nombre ?? "—"}</strong><small>{datos.porCobertura[0]?.total ?? 0} {datos.porCobertura[0]?.total === 1 ? "turno" : "turnos"}</small></article>
       </div>
 
       <div className="chart-grid">
