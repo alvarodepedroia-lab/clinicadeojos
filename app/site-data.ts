@@ -19,7 +19,7 @@ export const founders = [
   { name: "Dr. Enrique Larrea", role: "Fundador" },
   { name: "Dr. Guillermo Sansó", role: "Fundador" },
   { name: "Héctor Raed", role: "Fundador" },
-  { name: "Gloria Weissman", role: "Fundadora" },
+  { name: "Gloria Waisman", role: "Fundadora" },
 ];
 
 export const administrativeTeam = [
