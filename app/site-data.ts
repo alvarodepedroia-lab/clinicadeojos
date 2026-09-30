@@ -13,12 +13,13 @@ export const doctors = [
   { name: "Dr. Matías Sánchez", role: "Profesional de Clínica de Ojos", schedule: "Jueves de 08:30 a 10:30." },
 ];
 
-// Los tres fundadores de la clínica. Las fotos todavía no están: el sitio deja
+// Los fundadores de la clínica. Las fotos todavía no están: el sitio deja
 // el espacio reservado hasta que se carguen.
 export const founders = [
   { name: "Dr. Enrique Larrea", role: "Fundador" },
   { name: "Dr. Guillermo Sansó", role: "Fundador" },
-  { name: "Dra. Viviana Wais", role: "Fundadora" },
+  { name: "Héctor Raed", role: "Fundador" },
+  { name: "Gloria Weissman", role: "Fundadora" },
 ];
 
 export const administrativeTeam = [
