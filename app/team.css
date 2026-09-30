@@ -2,6 +2,17 @@
 
 /* Fundadores de la clínica, dentro de la sección de historia */
 .founders{grid-column:1/-1;margin-top:clamp(2.5rem,5vw,4rem)}
+.history-archive{grid-column:1/-1;margin-top:clamp(3rem,6vw,6rem);padding:clamp(1rem,2vw,1.5rem);background:#eff7fb;display:grid;grid-template-columns:minmax(260px,.78fr) 1.22fr;gap:clamp(2rem,5vw,5rem);align-items:start}
+.plaque-figure{margin:0;background:#fff;padding:.65rem;box-shadow:0 12px 30px #08255c1a}
+.plaque-figure img{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:cover}
+.plaque-figure figcaption{font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:#607a93;margin:.8rem .35rem .25rem}
+.history-timeline{padding:clamp(1rem,3vw,2.5rem) clamp(.25rem,1vw,1rem) 1rem 0}
+.history-timeline h3{font:500 clamp(1.8rem,3.1vw,3rem)/1.12 'Playfair Display',Georgia,serif;color:var(--navy);margin:.15rem 0 2rem;max-width:390px;letter-spacing:-.04em}
+.history-timeline ol{list-style:none;margin:0;padding:0;border-left:1px solid #b8dbe9}
+.history-timeline li{position:relative;padding:0 0 1.5rem 1.5rem}
+.history-timeline li:before{content:'';position:absolute;left:-5px;top:.35rem;width:9px;height:9px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px #eff7fb}
+.history-timeline time{display:block;font-size:.72rem;font-weight:800;letter-spacing:.12em;color:#078dcc;margin-bottom:.2rem}
+.history-timeline li p{font-size:.9rem;line-height:1.6;color:#526a85;margin:0;max-width:640px}
 .founders>.eyebrow{margin-bottom:1.4rem}
 .founders-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
 .founders-grid article{background:var(--paper);padding:1rem 1rem 1.5rem}
@@ -10,4 +21,5 @@
 .founder-photo{height:clamp(150px,14vw,230px);background:linear-gradient(145deg,#eef7fb,#d5eaf5);display:grid;place-items:center;position:relative;color:#092b78;font:500 1.5rem 'Playfair Display',Georgia,serif;letter-spacing:.04em}
 .founder-photo i{position:absolute;top:9px;right:10px;color:#0a9fd8;font:.65rem 'DM Sans',Arial,sans-serif;font-style:normal}
 @media(max-width:900px){.founders-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.history-archive{grid-template-columns:1fr}.history-timeline{padding:1rem .5rem}.history-timeline h3{max-width:none}.plaque-figure{max-width:430px;margin:auto}}
 @media(max-width:700px){.founders-grid{grid-template-columns:1fr}}
