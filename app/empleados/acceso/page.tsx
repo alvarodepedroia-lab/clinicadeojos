@@ -27,8 +27,17 @@ export default function EmployeeAccess() {
       } else {
         window.location.assign("/empleados");
       }
-    } catch {
-      setError("El acceso interno todavía no está configurado.");
+    } catch (cause) {
+      // Keep the underlying exception in the browser console for diagnosis, but
+      // don't tell patients/staff that configuration is missing when the real
+      // problem may simply be a connection failure.
+      console.error("No se pudo iniciar sesión en el panel de empleados.", cause);
+      const message = cause instanceof Error ? cause.message : "";
+      if (/Supabase no está configurado|Invalid supabaseUrl|Invalid API key/i.test(message)) {
+        setError("El acceso interno no está bien configurado. Avisale a la administración.");
+      } else {
+        setError("No pudimos conectar con el acceso interno. Revisá tu conexión e intentá de nuevo.");
+      }
     } finally {
       setLoading(false);
     }
