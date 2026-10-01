@@ -7,7 +7,7 @@ export const appointmentRequestSchema = z.object({
   careType: z.enum(careTypes),
   doctorName: z.string().trim().max(120).optional(),
   firstAvailable: z.boolean(),
-  coverageKind: z.enum(["obra_social", "prepaga", "particular"]),
+  coverageKind: z.enum(["obra_social", "prepaga", "particular", "pami"]),
   coverageName: z.string().trim().max(120).optional(),
   coveragePlan: z.string().trim().max(80).optional(),
   memberNumber: z.string().trim().max(60).optional(),

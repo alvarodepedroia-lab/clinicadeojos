@@ -7,9 +7,9 @@ const whatsapp = `https://wa.me/${site.whatsapp}`;
 export default async function TurnoConfirmacion({
   searchParams,
 }: {
-  searchParams: Promise<{ codigo?: string; fecha?: string; hora?: string; error?: string }>;
+  searchParams: Promise<{ codigo?: string; fecha?: string; hora?: string; error?: string; pami?: string }>;
 }) {
-  const { codigo, fecha, hora, error } = await searchParams;
+  const { codigo, fecha, hora, error, pami } = await searchParams;
 
   // Dos personas mandaron el mismo horario casi al mismo tiempo y la base
   // rechazó el segundo. No se registró nada: hay que elegir otro.
@@ -42,6 +42,9 @@ export default async function TurnoConfirmacion({
   }
 
   const valida = fecha && /^\d{4}-\d{2}-\d{2}$/.test(fecha);
+  const esPami = pami === "1";
+  const mensajePami = `Hola, solicité un turno con PAMI${codigo ? ` (solicitud ${codigo})` : ""}. Adjunto mi derivación.`;
+  const whatsappPami = `${whatsapp}?text=${encodeURIComponent(mensajePami)}`;
   // Sin fecha es el caso de los horarios rotativos: la clínica coordina.
   const dia = valida ? formatDateLabel(fecha).replace(",", "").toLocaleLowerCase("es-AR") : null;
 
@@ -80,6 +83,21 @@ export default async function TurnoConfirmacion({
           <p className="turno-codigo">Número de solicitud <strong>{codigo}</strong></p>
         )}
 
+        {esPami && (
+          <aside className="turno-pami-aviso" aria-labelledby="turno-pami-titulo">
+            <p className="turno-pami-etiqueta">Importante para afiliados PAMI</p>
+            <h2 id="turno-pami-titulo">Enviá tu derivación por WhatsApp</h2>
+            <p>
+              Para gestionar tu solicitud necesitás tener la derivación y enviarla a la clínica.
+              Adjuntala en WhatsApp junto con tu número de solicitud.
+            </p>
+            <a className="button" href={whatsappPami} target="_blank" rel="noreferrer">
+              Enviar derivación ahora →
+            </a>
+            <p className="turno-pami-numero">Número nuevo de WhatsApp: <strong>pendiente</strong></p>
+          </aside>
+        )}
+
         <p className="turno-nota">
           Ante cualquier cambio, Clínica de Ojos se pondrá en contacto con usted desde su
           WhatsApp oficial.
@@ -87,7 +105,7 @@ export default async function TurnoConfirmacion({
 
         <div className="turno-acciones">
           <a className="button" href="/">Volver al sitio</a>
-          <a className="text-link" href={whatsapp} target="_blank" rel="noreferrer">Escribirnos por WhatsApp →</a>
+          {!esPami && <a className="text-link" href={whatsapp} target="_blank" rel="noreferrer">Escribirnos por WhatsApp →</a>}
         </div>
       </section>
     </main>

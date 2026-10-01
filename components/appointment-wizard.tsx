@@ -78,6 +78,7 @@ export function AppointmentWizard({ doctors }: { doctors: PublicDoctor[] }) {
               <option value="particular">Particular</option>
               <option value="obra_social">Obra social</option>
               <option value="prepaga">Prepaga</option>
+              <option value="pami">PAMI</option>
             </select>
           </label>
           <label>Empresa <small>Opcional</small><input name="coverageName" /></label>

@@ -23,6 +23,12 @@
 .turno-codigo{font-size:.82rem;color:var(--muted);margin:0 0 1.5rem;padding:.7rem 1rem;background:#f5fafd;border:1px solid #dceaf3;border-radius:10px;display:inline-block}
 .turno-codigo strong{color:var(--ink);letter-spacing:.04em}
 .turno-nota{font-size:.79rem;line-height:1.5;color:var(--muted);max-width:42ch;margin:0 auto 1.8rem}
+.turno-pami-aviso{margin:1.5rem 0 1.8rem;padding:clamp(1.25rem,4vw,2rem);border:2px solid #e4a23c;border-radius:14px;background:linear-gradient(145deg,#fff8e8,#fff 78%);text-align:left;box-shadow:0 12px 30px #9a5a1218}
+.turno-pami-etiqueta{margin:0 0 .5rem;color:#8a4b08;font-size:.78rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.turno-pami-aviso h2{margin:0 0 .7rem;color:#092b78;font:600 clamp(1.55rem,5vw,2.2rem)/1.12 'Playfair Display',serif}
+.turno-pami-aviso>p:not(.turno-pami-etiqueta):not(.turno-pami-numero){margin:0 0 1.1rem;color:#34445e;line-height:1.55}
+.turno-pami-aviso .button{display:inline-flex;justify-content:center;max-width:100%;text-align:center}
+.turno-pami-numero{margin:1rem 0 0;color:#34445e;font-size:.8rem;overflow-wrap:anywhere}
 .turno-acciones{display:flex;flex-wrap:wrap;gap:1.1rem;align-items:center;justify-content:center}
 @media(max-width:520px){.turno-ok section{padding:1.6rem 1.2rem}.turno-acciones{flex-direction:column;gap:.9rem}}
 .turno-check-aviso{background:#fdf1e0;color:#9a5a12}

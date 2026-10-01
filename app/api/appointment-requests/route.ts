@@ -44,10 +44,15 @@ export async function POST(request: Request) {
     }
   }
   const requestCode = `CO-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+  // The form offers PAMI as a direct choice, while the database retains its
+  // existing coverage enum. Store the provider in coverage_name so the staff
+  // dashboard and coverage reports identify PAMI explicitly.
+  const coverageKind = value.coverageKind === "pami" ? "obra_social" : value.coverageKind;
+  const coverageName = value.coverageKind === "pami" ? "PAMI" : value.coverageName || null;
   const { error } = await client.from("appointment_requests").insert({
     request_code: requestCode,
     care_type: value.careType, doctor_id: doctorId, first_available: value.firstAvailable,
-    coverage_kind: value.coverageKind, coverage_name: value.coverageName || null, coverage_plan: value.coveragePlan || null, member_number: value.memberNumber || null,
+    coverage_kind: coverageKind, coverage_name: coverageName, coverage_plan: value.coveragePlan || null, member_number: value.memberNumber || null,
     preferred_date: value.preferredDate || null, preferred_time_band: value.preferredTimeBand || null, alternative_date: value.alternativeDate || null, alternative_time_band: value.alternativeTimeBand || null, third_date: value.thirdDate || null, third_time_band: value.thirdTimeBand || null,
     first_name: value.firstName, last_name: value.lastName, dni: value.dni, phone: value.phone, email: value.email || null, birth_date: value.birthDate || null, returning_patient: value.returningPatient,
   });
@@ -68,6 +73,7 @@ export async function POST(request: Request) {
     destino.searchParams.set("codigo", requestCode);
     if (value.preferredDate) destino.searchParams.set("fecha", value.preferredDate);
     if (value.preferredTimeBand) destino.searchParams.set("hora", value.preferredTimeBand);
+    if (value.coverageKind === "pami") destino.searchParams.set("pami", "1");
     return NextResponse.redirect(destino, { status: 303 });
   }
   return NextResponse.json({ requestCode }, { status: 201 });
