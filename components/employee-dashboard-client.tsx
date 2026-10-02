@@ -20,7 +20,8 @@ const legacyStatuses = [
   ["rejected", "Rechazada"], ["cancelled", "Cancelada"],
 ] as const;
 
-const allStatuses = [...statuses, ...legacyStatuses];
+const pamiControlledStatus = ["pami_controlled", "Controlado PAMI"] as const;
+const allStatuses = [...statuses, ...legacyStatuses, pamiControlledStatus];
 const pendingStatuses = ["new", "under_review"];
 
 export type AppointmentRequest = {
@@ -57,6 +58,8 @@ const careLabels: Record<string, string> = {
 const coverageLabels: Record<string, string> = {
   particular: "Particular", obra_social: "Obra social", prepaga: "Prepaga",
 };
+const isPamiRequest = (request: Pick<AppointmentRequest, "coverage_kind" | "coverage_name">) =>
+  request.coverage_name?.trim().toLocaleUpperCase("es-AR").includes("PAMI") ?? false;
 
 const dateFormat = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short", year: "numeric" });
 const statusLabel = (status: string) => allStatuses.find(([value]) => value === status)?.[1] ?? status;
@@ -242,8 +245,9 @@ export default function EmployeeDashboardClient({
           <img src="/logo-clinica-de-ojos.png" alt="Clínica de Ojos" />
         </a>
         <div className="employee-intro">
-          <p>Panel de empleados</p>
-          <h1>Gestión de turnos</h1>
+          <p>Gestión de turnos</p>
+          <h1>ClinicAI</h1>
+          <div className="product-tagline">Sistema inteligente de turnos y gestión de salud</div>
           <small>Hola, {profile.fullName} · {profile.role}</small>
         </div>
         <button type="button" className="sign-out" onClick={signOut}>Cerrar sesión</button>
@@ -307,7 +311,7 @@ export default function EmployeeDashboardClient({
                 </thead>
                 <tbody>
                   {visibleRequests.map((request) => (
-                    <tr key={request.id}>
+                    <tr key={request.id} className={isPamiRequest(request) ? "request-pami" : undefined}>
                       <td>
                         <strong>{request.first_name} {request.last_name}</strong>
                         <small>DNI {request.dni}<br />{request.phone}</small>
@@ -335,7 +339,9 @@ export default function EmployeeDashboardClient({
                             onChange={(event) => updateStatus(request.id, event.target.value as AppointmentRequest["status"])}
                           >
                             {statuses.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                            {!statuses.some(([value]) => value === request.status) && (
+                            {isPamiRequest(request) && <option value={pamiControlledStatus[0]}>{pamiControlledStatus[1]}</option>}
+                            {!statuses.some(([value]) => value === request.status) &&
+                              !(isPamiRequest(request) && request.status === pamiControlledStatus[0]) && (
                               <option value={request.status}>{statusLabel(request.status)} (anterior)</option>
                             )}
                           </select>

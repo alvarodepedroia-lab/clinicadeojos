@@ -1,0 +1,19 @@
+.request-pami {
+  background: #fff7df;
+}
+
+.request-pami td:first-child {
+  box-shadow: inset 4px 0 #e9b634;
+}
+
+.status-pami_controlled {
+  background: #e6f7ed;
+  color: #167042;
+}
+
+.product-tagline {
+  margin-top: .3rem;
+  color: #526a85;
+  font-size: .9rem;
+  line-height: 1.4;
+}

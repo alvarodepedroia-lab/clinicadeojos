@@ -3,6 +3,7 @@ import { siteUrl } from "./site-data";
 import "./globals.css";
 import "./appointment.css";
 import "./employees.css";
+import "./pami.css";
 import "./hero-logo.css";
 import "./mobile.css";
 import "./team.css";
