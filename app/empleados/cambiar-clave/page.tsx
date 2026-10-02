@@ -50,7 +50,7 @@ export default function ChangePassword() {
 
   return (
     <main className="employee-access">
-      <a className="brand" href="/"><img src="/logo-clinica-de-ojos.png" alt="Clínica de Ojos" /></a>
+      <a className="brand clinicai-brand" href="/" aria-label="ClinicAI"><img src="/clinicai-logo.png" alt="ClinicAI" /></a>
       <section>
         <p className="eyebrow">Primer ingreso</p>
         <h1>Elegí tu contraseña</h1>

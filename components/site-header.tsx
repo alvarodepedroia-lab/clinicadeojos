@@ -10,7 +10,7 @@ const enlaces = [
   ["#prestaciones", "Prestaciones"],
   ["#preguntas", "Preguntas frecuentes"],
   ["#contacto", "Contacto"],
-  ["/empleados/acceso", "Ingreso Clínica"],
+  ["/empleados/acceso", "Ingreso ClinicAI"],
 ];
 
 export function SiteHeader() {

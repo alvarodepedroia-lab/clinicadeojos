@@ -17,3 +17,33 @@
   font-size: .9rem;
   line-height: 1.4;
 }
+
+.employee-access > .clinicai-brand {
+  width: clamp(210px, 26vw, 300px);
+  line-height: 0;
+}
+
+.employee-access > .clinicai-brand img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.employee-dashboard .dashboard-logo {
+  width: clamp(190px, 22vw, 260px);
+  height: auto;
+}
+
+.employee-dashboard .dashboard-logo img {
+  height: auto;
+}
+
+@media (max-width: 700px) {
+  .employee-access > .clinicai-brand {
+    width: min(190px, 48vw);
+  }
+
+  .employee-dashboard .dashboard-logo {
+    width: min(165px, 42vw);
+  }
+}

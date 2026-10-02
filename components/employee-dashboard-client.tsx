@@ -242,7 +242,7 @@ export default function EmployeeDashboardClient({
     <main className="employee-dashboard">
       <header className="employee-header">
         <a className="dashboard-logo" href="/" aria-label="Volver al sitio público">
-          <img src="/logo-clinica-de-ojos.png" alt="Clínica de Ojos" />
+          <img src="/clinicai-logo.png" alt="ClinicAI" />
         </a>
         <div className="employee-intro">
           <p>Gestión de turnos</p>

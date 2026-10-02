@@ -62,10 +62,10 @@ export default function EmployeeAccess() {
 
   return (
     <main className="employee-access">
-      <a className="brand" href="/"><img src="/logo-clinica-de-ojos.png" alt="Clínica de Ojos" /></a>
+      <a className="brand clinicai-brand" href="/" aria-label="ClinicAI"><img src="/clinicai-logo.png" alt="ClinicAI" /></a>
       <section>
         <p className="eyebrow">Acceso privado</p>
-        <h1>Ingreso Clínica</h1>
+        <h1>Ingreso ClinicAI</h1>
         <p>Ingresá con tu usuario y contraseña institucionales.</p>
 
         <form method="post" onSubmit={signIn}>
