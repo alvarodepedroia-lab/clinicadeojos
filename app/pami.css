@@ -18,6 +18,17 @@
   line-height: 1.4;
 }
 
+.employee-intro .dashboard-kicker {
+  margin: 0 0 .35rem;
+  color: #078dcc;
+  font-family: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
 .employee-access > .clinicai-brand {
   width: clamp(210px, 26vw, 300px);
   line-height: 0;
@@ -27,6 +38,7 @@
   width: 100%;
   height: auto;
   object-fit: contain;
+  mix-blend-mode: multiply;
 }
 
 .employee-dashboard .dashboard-logo {
@@ -36,6 +48,7 @@
 
 .employee-dashboard .dashboard-logo img {
   height: auto;
+  mix-blend-mode: multiply;
 }
 
 @media (max-width: 700px) {

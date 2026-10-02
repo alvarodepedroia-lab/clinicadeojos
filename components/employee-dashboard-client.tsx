@@ -245,8 +245,7 @@ export default function EmployeeDashboardClient({
           <img src="/clinicai-logo.png" alt="ClinicAI" />
         </a>
         <div className="employee-intro">
-          <p>Gestión de turnos</p>
-          <h1>ClinicAI</h1>
+          <h1 className="dashboard-kicker">Gestión de turnos</h1>
           <div className="product-tagline">Sistema inteligente de turnos y gestión de salud</div>
           <small>Hola, {profile.fullName} · {profile.role}</small>
         </div>
